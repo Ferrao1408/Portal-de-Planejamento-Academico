@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Planejador Acadêmico - UFRPE</title>
+    <link rel="stylesheet" href="src/css/styles.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Notificações -->
+        <div id="notifications" style="position: fixed; top: 20px; right: 20px; z-index: 200; max-width: 400px;"></div>
+
+        <!-- Header -->
+        <header>
+            <div class="container">
+                <div class="header-content">
+                    <div>
+                        <h1>Planejador Acadêmico</h1>
+                        <p>Ciência da Computação - UFRPE</p>
+                    </div>
+                    <div class="header-right">
+                        <p>Semestre Ativo</p>
+                        <p id="activeSemester">2024.1</p>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Navegação -->
+        <nav>
+            <div class="container">
+                <div class="nav-tabs">
+                    <button class="tab-button active" data-tab="dashboard">Dashboard</button>
+                    <button class="tab-button" data-tab="schedule">Agenda Semanal</button>
+                    <button class="tab-button" data-tab="flowchart">Fluxograma</button>
+                    <button class="tab-button" data-tab="grades">Notas</button>
+                    <button class="tab-button" data-tab="admin">Gerenciamento</button>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Conteúdo Principal -->
+        <main>
+            <div class="container">
+                <!-- Dashboard -->
+                <div id="dashboard" class="tab-content active">
+                    <div class="grid grid-cols-1 grid-cols-3 gap-lg mb-2xl">
+                        <div class="card">
+                            <h3>Progresso do Curso</h3>
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="progressFill" style="width: 0%">0%</div>
+                            </div>
+                            <p class="text-small text-muted"><span id="hoursCompleted">0</span> / 3210 horas</p>
+                        </div>
+                        <div class="card">
+                            <h3>Disciplinas Matriculadas</h3>
+                            <p style="font-size: 2rem; font-weight: bold; color: var(--primary-blue); margin: 0;">
+                                <span id="enrolledCount">0</span>
+                            </p>
+                            <p class="text-small text-muted">neste semestre</p>
+                        </div>
+                        <div class="card">
+                            <h3>Média Geral</h3>
+                            <p style="font-size: 2rem; font-weight: bold; color: var(--primary-purple); margin: 0;">
+                                <span id="generalAverage">-</span>
+                            </p>
+                            <p class="text-small text-muted">disciplinas concluídas</p>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h2>Disciplinas do Semestre Ativo</h2>
+                        </div>
+                        <div class="card-body">
+                            <div class="grid grid-cols-1 grid-cols-2 grid-cols-3 gap-md" id="dashboardDisciplines">
+                                <!-- Populated by JavaScript -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Agenda Semanal -->
+                <div id="schedule" class="tab-content">
+                    <div class="card">
+                        <div class="card-header">
+                            <h2>Agenda Semanal</h2>
+                        </div>
+                        <div class="card-body table-responsive">
+                            <div class="schedule-grid" id="scheduleGrid">
+                                <!-- Populated by JavaScript -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Fluxograma -->
+                <div id="flowchart" class="tab-content">
+                    <div class="card">
+                        <div class="card-header">
+                            <h2>Fluxograma do Curso</h2>
+                            <div class="flex gap-lg mt-md" style="flex-wrap: wrap;">
+                                <div class="flex items-center gap-sm">
+                                    <div style="width: 1rem; height: 1rem; border-radius: 0.25rem; background-color: #d1fae5;"></div>
+                                    <span class="text-small">Concluída</span>
+                                </div>
+                                <div class="flex items-center gap-sm">
+                                    <div style="width: 1rem; height: 1rem; border-radius: 0.25rem; background-color: #dbeafe;"></div>
+                                    <span class="text-small">Disponível</span>
+                                </div>
+                                <div class="flex items-center gap-sm">
+                                    <div style="width: 1rem; height: 1rem; border-radius: 0.25rem; background-color: #e5e7eb;"></div>
+                                    <span class="text-small">Bloqueada</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="flowchart-container" id="flowchartContainer">
+                                <!-- Populated by JavaScript -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Notas -->
+                <div id="grades" class="tab-content">
+                    <div class="card">
+                        <div class="card-header">
+                            <h2>Painel de Notas</h2>
+                        </div>
+                        <div class="card-body" id="gradesPanel">
+                            <!-- Populated by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Administração -->
+                <div id="admin" class="tab-content">
+                    <div class="grid grid-cols-1 grid-cols-2 gap-lg mb-2xl">
+                        <!-- Importar CSV -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h3>Importar CSV</h3>
+                            </div>
+                            <div class="card-body">
+                                <div class="form-group">
+                                    <label>Arquivo CSV</label>
+                                    <input type="file" id="csvFile" accept=".csv">
+                                    <p class="text-small text-muted mt-md">
+                                        Formato: Código;Nome;Professor;Período;Local;Dia;Início;Fim;Pré-requisitos
+                                    </p>
+                                </div>
+                                <button class="btn btn-primary btn-block" onclick="importCSV()">Importar</button>
+                            </div>
+                        </div>
+
+                        <!-- Adicionar Disciplina -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h3>Adicionar Disciplina</h3>
+                            </div>
+                            <div class="card-body">
+                                <div class="form-group">
+                                    <label>Código</label>
+                                    <input type="text" id="disciplineCode" placeholder="Ex: 14203">
+                                </div>
+                                <div class="form-group">
+                                    <label>Nome</label>
+                                    <input type="text" id="disciplineName" placeholder="Ex: MATEMÁTICA DISCRETA I">
+                                </div>
+                                <div class="form-group">
+                                    <label>Professor</label>
+                                    <input type="text" id="disciplineProfessor" placeholder="Ex: Pablo Sampaio">
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>Período</label>
+                                        <input type="number" id="disciplinePeriod" placeholder="Ex: 1" min="1" max="9">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Carga Horária</label>
+                                        <input type="number" id="disciplineHours" placeholder="Ex: 60" min="0">
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label>Pré-requisitos (IDs separados por vírgula)</label>
+                                    <input type="text" id="disciplinePrerequisites" placeholder="Ex: 14117,06418">
+                                </div>
+                                <button class="btn btn-primary btn-block" onclick="addDisciplineManually()">Adicionar</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Catálogo de Disciplinas -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h2>Catálogo de Disciplinas</h2>
+                        </div>
+                        <div class="card-body table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Código</th>
+                                        <th>Nome</th>
+                                        <th>Professor</th>
+                                        <th>Período</th>
+                                        <th>Carga Horária</th>
+                                        <th>Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="catalogTable">
+                                    <!-- Populated by JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modais -->
+    <!-- Modal de Notas -->
+    <div id="gradesModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="gradesModalTitle">Notas - Disciplina</h2>
+                <button class="modal-close">×</button>
+            </div>
+            <div class="form-group">
+                <label>Nota N1 (0-10)</label>
+                <input type="number" id="gradeN1" min="0" max="10" step="0.1">
+            </div>
+            <div class="form-group">
+                <label>Nota N2 (0-10)</label>
+                <input type="number" id="gradeN2" min="0" max="10" step="0.1">
+            </div>
+            <div class="form-group">
+                <label>Nota N3 (0-10)</label>
+                <input type="number" id="gradeN3" min="0" max="10" step="0.1">
+            </div>
+            <div id="gradesResult" class="alert alert-success hidden">
+                <!-- Populated by JavaScript -->
+            </div>
+            <div id="finalExamAlert" class="alert alert-warning hidden">
+                <!-- Populated by JavaScript -->
+            </div>
+            <div class="btn-group">
+                <button class="btn btn-primary flex-1" onclick="saveGrades()">Salvar Notas</button>
+                <button class="btn btn-secondary flex-1" onclick="closeModal('gradesModal')">Fechar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Editar Disciplina -->
+    <div id="editDisciplineModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Editar Disciplina</h2>
+                <button class="modal-close">×</button>
+            </div>
+            <div class="form-group">
+                <label>Código</label>
+                <input type="text" id="editDisciplineCode" disabled>
+            </div>
+            <div class="form-group">
+                <label>Nome</label>
+                <input type="text" id="editDisciplineName">
+            </div>
+            <div class="form-group">
+                <label>Professor</label>
+                <input type="text" id="editDisciplineProfessor">
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Período</label>
+                    <input type="number" id="editDisciplinePeriod" min="1" max="9">
+                </div>
+                <div class="form-group">
+                    <label>Carga Horária</label>
+                    <input type="number" id="editDisciplineHours" min="0">
+                </div>
+            </div>
+            <div class="btn-group">
+                <button class="btn btn-primary flex-1" onclick="saveEditedDiscipline()">Salvar</button>
+                <button class="btn btn-secondary flex-1" onclick="closeModal('editDisciplineModal')">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="src/js/api.js"></script>
+    <script src="src/js/ui.js"></script>
+</body>
+</html>
