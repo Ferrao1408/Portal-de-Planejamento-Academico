@@ -60,15 +60,23 @@ class AcademicCalculations:
         if not (0 <= average <= 10):
             raise ValueError(f"Média {average} fora do intervalo 0-10")
         
-        if average >= 7.0 or average < 3.0:
+        # Se média >= 7.0, já passou
+        if average >= 7.0:
             return None
         
+        # Se média < 3.0, reprova direto
+        if average < 3.0:
+            return None
+        
+        # Se 3.0 <= média < 7.0, precisa fazer final
         final_grade_needed = 10 - average
         return round(final_grade_needed, 2)
 
     @staticmethod
     def calculate_course_progress(completed_hours: int, total_hours: int = 3210) -> float:
-        """Calcula o percentual de progresso do curso (Padrão: 3210h para CCP02)."""
+        """
+        Calcula o percentual de progresso do curso.
+        """
         if total_hours <= 0:
             raise ValueError("Total de horas deve ser maior que 0")
         
@@ -83,7 +91,9 @@ class AcademicCalculations:
 
     @staticmethod
     def calculate_general_average(discipline_averages: List[float]) -> Optional[float]:
-        """Calcula a média aritmética simples das disciplinas."""
+        """
+        Calcula a média geral simples do aluno.
+        """
         if not discipline_averages:
             return None
         
@@ -100,7 +110,9 @@ class ScheduleValidation:
 
     @staticmethod
     def time_to_minutes(time_str: str) -> int:
-        """Converte string (HH:MM) para minutos."""
+        """
+        Converte uma string de horário (HH:MM) para minutos.
+        """
         try:
             hours, minutes = map(int, time_str.split(':'))
             if not (0 <= hours < 24 and 0 <= minutes < 60):
@@ -111,7 +123,9 @@ class ScheduleValidation:
 
     @staticmethod
     def check_time_overlap(start1: str, end1: str, start2: str, end2: str) -> bool:
-        """Verifica se dois períodos de tempo se sobrepõem."""
+        """
+        Verifica se dois períodos de tempo se sobrepõem.
+        """
         start1_min = ScheduleValidation.time_to_minutes(start1)
         end1_min = ScheduleValidation.time_to_minutes(end1)
         start2_min = ScheduleValidation.time_to_minutes(start2)
@@ -122,19 +136,26 @@ class ScheduleValidation:
     @staticmethod
     def has_schedule_conflict(discipline1_schedules: List[Dict], 
                              discipline2_schedules: List[Dict]) -> Tuple[bool, Optional[Dict]]:
-        """Verifica se há conflito de horários entre duas disciplinas."""
+        """
+        Verifica se há conflito de horários entre duas disciplinas.
+        """
         for sch1 in discipline1_schedules:
             for sch2 in discipline2_schedules:
+                # Mesmo dia da semana
                 if sch1.get('day') == sch2.get('day'):
+                    # Verificar sobreposição de horários
                     if ScheduleValidation.check_time_overlap(
-                        sch1.get('start'), sch1.get('end'),
-                        sch2.get('start'), sch2.get('end')
+                        sch1.get('start'),
+                        sch1.get('end'),
+                        sch2.get('start'),
+                        sch2.get('end')
                     ):
                         return True, {
                             'day': sch1.get('day'),
                             'time1': f"{sch1.get('start')}-{sch1.get('end')}",
                             'time2': f"{sch2.get('start')}-{sch2.get('end')}"
                         }
+        
         return False, None
 
 
@@ -144,23 +165,45 @@ class PrerequisiteValidation:
     @staticmethod
     def check_prerequisites(discipline_prerequisites: List[str],
                            completed_disciplines: Dict[str, float]) -> Tuple[bool, List[str]]:
-        """Verifica se todos os pré-requisitos foram atendidos com média >= 7.0."""
+        """
+        Verifica se todos os pré-requisitos foram atendidos.
+        """
         missing = []
+        
         for prereq_id in discipline_prerequisites:
+            # Verificar se o pré-requisito foi concluído (média >= 7.0)
             if prereq_id not in completed_disciplines or completed_disciplines[prereq_id] < 7.0:
                 missing.append(prereq_id)
+        
         return len(missing) == 0, missing
 
     @staticmethod
-    def validate_discipline_status(discipline_prerequisites: List[str],
-                                  completed_disciplines: Dict[str, float]) -> str:
-        """Determina o status da disciplina ('completed', 'available', 'blocked')."""
+    def validate_discipline_status(discipline_id: str,
+                                  discipline_prerequisites: List[str],
+                                  completed_disciplines: Dict[str, float],
+                                  enrolled_ids: List[str] = []) -> str:
+        """
+        Determina o status de uma disciplina.
+        Status: 'completed', 'studying', 'available', 'blocked'
+        """
+        # 1. Verificar se já foi concluída
+        if discipline_id in completed_disciplines and completed_disciplines[discipline_id] >= 7.0:
+            return 'completed'
+        
+        # 2. Verificar se está sendo cursada no semestre atual
+        if discipline_id in enrolled_ids:
+            return 'studying'
+        
+        # 3. Se não há pré-requisitos, está disponível
         if not discipline_prerequisites:
             return 'available'
         
+        # 4. Verificar se todos os pré-requisitos foram atendidos
         all_met, _ = PrerequisiteValidation.check_prerequisites(
-            discipline_prerequisites, completed_disciplines
+            discipline_prerequisites,
+            completed_disciplines
         )
+        
         return 'available' if all_met else 'blocked'
 
 
@@ -168,13 +211,46 @@ class DataValidation:
     """Classe responsável pela validação geral de dados."""
 
     @staticmethod
+    def validate_discipline_code(code: str) -> bool:
+        """Valida o código de uma disciplina."""
+        return bool(code and isinstance(code, str) and len(code.strip()) > 0)
+
+    @staticmethod
+    def validate_period(period: int) -> bool:
+        """Valida o período (nível) de uma disciplina."""
+        return isinstance(period, int) and 1 <= period <= 9
+
+    @staticmethod
+    def validate_hours(hours: int) -> bool:
+        """Valida a carga horária de uma disciplina."""
+        return isinstance(hours, int) and hours > 0
+
+    @staticmethod
+    def validate_day_of_week(day: int) -> bool:
+        """Valida o dia da semana (1=Segunda, 5=Sexta)."""
+        return isinstance(day, int) and 1 <= day <= 5
+
+    @staticmethod
     def validate_discipline_data(code: str, name: str, professor: str, 
                                 period: int, hours: int) -> Tuple[bool, List[str]]:
+        """
+        Valida todos os dados de uma disciplina.
+        """
         errors = []
-        if not code or len(code.strip()) == 0:
+        
+        if not DataValidation.validate_discipline_code(code):
             errors.append("Código de disciplina inválido")
-        if not (1 <= period <= 9):
+        
+        if not name or not isinstance(name, str):
+            errors.append("Nome da disciplina inválido")
+        
+        if not professor or not isinstance(professor, str):
+            errors.append("Nome do professor inválido")
+        
+        if not DataValidation.validate_period(period):
             errors.append("Período deve estar entre 1 e 9")
-        if hours <= 0:
+        
+        if not DataValidation.validate_hours(hours):
             errors.append("Carga horária deve ser maior que 0")
+        
         return len(errors) == 0, errors

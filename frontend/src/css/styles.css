@@ -415,12 +415,16 @@ main {
     background: linear-gradient(135deg, var(--success-green) 0%, #059669 100%);
 }
 
+.discipline-card.studying {
+    background: linear-gradient(135deg, var(--warning-yellow) 0%, #d97706 100%);
+}
+
 .discipline-card.available {
     background: linear-gradient(135deg, var(--primary-blue) 0%, #2563eb 100%);
 }
 
 .discipline-card.blocked {
-    background: linear-gradient(135deg, #9ca3af 0%, #6b7280 100%);
+    background: linear-gradient(135deg, #9ca3af) 0%, #6b7280 100%);
 }
 
 .discipline-card-content {
@@ -839,6 +843,12 @@ main {
     background-color: #d1fae5;
     color: #065f46;
     border-left-color: var(--success-green);
+}
+
+.flowchart-discipline.studying {
+    background-color: #fef3c7;
+    color: #92400e;
+    border-left-color: var(--warning-yellow);
 }
 
 .flowchart-discipline.available {

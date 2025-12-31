@@ -45,6 +45,12 @@
         <main>
             <div class="container">
                 <div id="dashboard" class="tab-content active">
+                    <div class="flex justify-end mb-md">
+                        <button class="btn btn-success" onclick="openCreditTransferModal()">
+                            + Aproveitamento de Estudos
+                        </button>
+                    </div>
+
                     <div class="grid grid-cols-1 grid-cols-3 gap-lg mb-2xl">
                         <div class="card">
                             <h3>Progresso do Curso</h3>
@@ -100,6 +106,10 @@
                                 <div class="flex items-center gap-sm">
                                     <div style="width: 1rem; height: 1rem; border-radius: 0.25rem; background-color: #d1fae5;"></div>
                                     <span class="text-small">Concluída</span>
+                                </div>
+                                <div class="flex items-center gap-sm">
+                                    <div style="width: 1rem; height: 1rem; border-radius: 0.25rem; background-color: #fef3c7;"></div>
+                                    <span class="text-small">Cursando</span>
                                 </div>
                                 <div class="flex items-center gap-sm">
                                     <div style="width: 1rem; height: 1rem; border-radius: 0.25rem; background-color: #dbeafe;"></div>
@@ -206,6 +216,31 @@
                 </div>
             </div>
         </main>
+    </div>
+
+    <div id="creditTransferModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Aproveitamento de Estudos</h2>
+                <button class="modal-close">×</button>
+            </div>
+            <p class="text-small text-muted mb-lg">Adicione uma disciplina concluída via dispensa ou equivalência.</p>
+            
+            <div class="form-group">
+                <label>Selecione a Disciplina</label>
+                <select id="transferDisciplineCode">
+                    </select>
+            </div>
+            <div class="form-group">
+                <label>Nota Final (0-10)</label>
+                <input type="number" id="transferGrade" min="7" max="10" step="0.1" value="7.0">
+            </div>
+            
+            <div class="btn-group">
+                <button class="btn btn-primary flex-1" onclick="saveCreditTransfer()">Registrar Aproveitamento</button>
+                <button class="btn btn-secondary flex-1" onclick="closeModal('creditTransferModal')">Cancelar</button>
+            </div>
+        </div>
     </div>
 
     <div id="gradesModal" class="modal">
