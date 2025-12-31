@@ -35,6 +35,23 @@ function setupEventListeners() {
         });
     });
 
+    // Seletor de Semestres (Navegação dinâmica)
+    const semSelect = document.getElementById('semesterSelect');
+    if (semSelect) {
+        semSelect.value = currentSemester;
+        semSelect.addEventListener('change', (e) => {
+            currentSemester = e.target.value;
+            // Atualiza o texto visual do semestre se o elemento existir
+            const activeSemLabel = document.getElementById('activeSemester');
+            if (activeSemLabel) activeSemLabel.textContent = currentSemester;
+            
+            // Recarrega a aba ativa para o novo semestre escolhido
+            const activeTab = document.querySelector('.tab-button.active').dataset.tab;
+            switchTab(activeTab);
+            Notifications.success(`Semestre alterado para ${currentSemester}`);
+        });
+    }
+
     // Modais
     document.querySelectorAll('.modal-close').forEach((button) => {
         button.addEventListener('click', (e) => {
@@ -127,12 +144,13 @@ async function loadDashboard() {
 
         const generalAverage = document.getElementById('generalAverage');
         if (generalAverage) {
+            // Exibe a média geral (agora calculada como CR ponderado no backend)
             generalAverage.textContent = progress.general_average
                 ? Utils.formatNumber(progress.general_average)
                 : '-';
         }
 
-        // Renderizar disciplinas matriculadas
+        // Renderizar disciplinas matriculadas no semestre ativo
         const enrolled = await SemestersAPI.getEnrolled(currentSemester);
         const container = document.getElementById('dashboardDisciplines');
         if (container) {
@@ -218,42 +236,48 @@ function getStatusText(status) {
 }
 
 /**
- * Carregar Agenda Semanal
+ * Carregar Agenda Semanal (Refinada com horários dinâmicos)
  */
 async function loadSchedule() {
     try {
         const schedule = await EnrollmentsAPI.getSchedule(currentSemester);
-
         const grid = document.getElementById('scheduleGrid');
         if (!grid) return;
 
         grid.innerHTML = '';
 
-        // Headers
-        const days = ['', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta'];
-        days.forEach((day) => {
+        // Headers (Seg-Sex)
+        ['', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta'].forEach(day => {
             const cell = document.createElement('div');
             cell.className = 'schedule-cell schedule-header';
             cell.textContent = day;
             grid.appendChild(cell);
         });
 
-        // Time slots
-        const times = ['08:00', '10:00', '12:00', '14:00', '16:00', '18:00', '20:00'];
-        times.forEach((time) => {
+        // Identificar todos os horários de início únicos das disciplinas matriculadas
+        const allTimes = new Set();
+        Object.values(schedule).forEach(dayClasses => {
+            dayClasses.forEach(c => allTimes.add(c.start));
+        });
+        
+        // Ordenar os horários para criar as linhas da agenda
+        const sortedTimes = Array.from(allTimes).sort();
+
+        sortedTimes.forEach(time => {
+            // Célula do Horário
             const timeCell = document.createElement('div');
             timeCell.className = 'schedule-cell schedule-time';
             timeCell.textContent = time;
             grid.appendChild(timeCell);
 
+            // Células para cada dia da semana
             for (let day = 1; day <= 5; day++) {
                 const cell = document.createElement('div');
                 cell.className = 'schedule-cell';
 
-                const classesAtTime = schedule[day].filter((cls) => cls.start === time);
+                const cls = schedule[day].find(c => c.start === time);
 
-                if (classesAtTime.length > 0) {
-                    const cls = classesAtTime[0];
+                if (cls) {
                     const classDiv = document.createElement('div');
                     classDiv.className = 'schedule-class';
                     classDiv.innerHTML = `
@@ -262,7 +286,6 @@ async function loadSchedule() {
                     `;
                     cell.appendChild(classDiv);
                 }
-
                 grid.appendChild(cell);
             }
         });
@@ -290,7 +313,7 @@ async function loadFlowchart() {
             byPeriod[disc.period].push(disc);
         });
 
-        // Renderizar cada período
+        // Renderizar cada período (Nível 1 ao 9)
         for (let period = 1; period <= 9; period++) {
             if (!byPeriod[period]) continue;
 
@@ -406,7 +429,7 @@ async function loadGrades() {
 }
 
 /**
- * Carregar Administração
+ * Carregar Administração (Catálogo)
  */
 async function loadAdmin() {
     try {
@@ -471,7 +494,7 @@ async function openGradesModal(disciplineCode) {
 }
 
 /**
- * Salvar notas
+ * Salvar notas e exibir resultados UFRPE
  */
 async function saveGrades() {
     try {
@@ -487,23 +510,14 @@ async function saveGrades() {
             return;
         }
 
-        if (n1 < 0 || n1 > 10 || n2 < 0 || n2 > 10 || n3 < 0 || n3 > 10) {
-            Notifications.error('As notas devem estar entre 0 e 10');
-            return;
-        }
+        const result = await DisciplinesAPI.setGrades(disciplineCode, { n1, n2, n3 });
 
-        const result = await DisciplinesAPI.setGrades(disciplineCode, {
-            n1,
-            n2,
-            n3,
-        });
-
-        // Mostrar resultado
+        // Mostrar resultado da média 2 de 3
         const resultDiv = document.getElementById('gradesResult');
         resultDiv.textContent = `Média Final (UFRPE): ${Utils.formatNumber(result.average)}`;
         resultDiv.classList.remove('hidden');
 
-        // Mostrar alerta de prova final se necessário
+        // Mostrar alerta de prova final se necessário (simulador)
         if (result.needs_final_exam) {
             const alertDiv = document.getElementById('finalExamAlert');
             alertDiv.innerHTML = `<strong>Atenção!</strong> Você precisa de <strong>${Utils.formatNumber(
@@ -522,30 +536,22 @@ async function saveGrades() {
 }
 
 /**
- * Deletar disciplina
+ * Operações CRUD de Administração
  */
 async function deleteDiscipline(code) {
-    if (!confirm('Tem certeza que deseja excluir esta disciplina?')) {
-        return;
-    }
-
+    if (!confirm('Tem certeza que deseja excluir esta disciplina?')) return;
     try {
         await DisciplinesAPI.delete(code);
         Notifications.success('Disciplina deletada com sucesso!');
         loadAdmin();
     } catch (error) {
-        console.error('Erro ao deletar disciplina:', error);
         Notifications.error('Erro ao deletar disciplina');
     }
 }
 
-/**
- * Editar disciplina
- */
 async function editDiscipline(code) {
     try {
         const disc = await DisciplinesAPI.get(code);
-
         document.getElementById('editDisciplineCode').value = disc.code;
         document.getElementById('editDisciplineName').value = disc.name;
         document.getElementById('editDisciplineProfessor').value = disc.professor;
@@ -554,146 +560,85 @@ async function editDiscipline(code) {
 
         const modal = document.getElementById('editDisciplineModal');
         modal.dataset.disciplineCode = code;
-
         openModal('editDisciplineModal');
     } catch (error) {
-        console.error('Erro ao editar disciplina:', error);
         Notifications.error('Erro ao editar disciplina');
     }
 }
 
-/**
- * Salvar disciplina editada
- */
 async function saveEditedDiscipline() {
     try {
         const modal = document.getElementById('editDisciplineModal');
         const code = modal.dataset.disciplineCode;
-
-        const name = document.getElementById('editDisciplineName').value.trim();
-        const professor = document.getElementById('editDisciplineProfessor').value.trim();
-        const period = parseInt(document.getElementById('editDisciplinePeriod').value);
-        const hours = parseInt(document.getElementById('editDisciplineHours').value);
-
-        if (!name || !professor || !period || !hours) {
-            Notifications.error('Preencha todos os campos');
-            return;
-        }
-
-        await DisciplinesAPI.update(code, {
-            name,
-            professor,
-            period,
-            hours,
-        });
-
-        Notifications.success('Disciplina atualizada com sucesso!');
+        const data = {
+            name: document.getElementById('editDisciplineName').value.trim(),
+            professor: document.getElementById('editDisciplineProfessor').value.trim(),
+            period: parseInt(document.getElementById('editDisciplinePeriod').value),
+            hours: parseInt(document.getElementById('editDisciplineHours').value)
+        };
+        await DisciplinesAPI.update(code, data);
+        Notifications.success('Disciplina atualizada!');
         closeModal('editDisciplineModal');
         loadAdmin();
     } catch (error) {
-        console.error('Erro ao salvar disciplina:', error);
-        Notifications.error('Erro ao salvar disciplina');
+        Notifications.error('Erro ao salvar alterações');
     }
 }
 
 /**
- * Importar CSV
+ * Importar Catálogo via CSV
  */
 async function importCSV() {
     try {
         const fileInput = document.getElementById('csvFile');
         const file = fileInput.files[0];
-
         if (!file) {
             Notifications.error('Selecione um arquivo CSV');
             return;
         }
-
         const result = await DisciplinesAPI.importCSV(file);
-
         if (result.success) {
-            Notifications.success(`${result.imported_count} disciplinas importadas com sucesso!`);
+            Notifications.success(`${result.imported_count} disciplinas importadas!`);
             fileInput.value = '';
             loadAdmin();
         } else {
             Notifications.error(result.message);
-            if (result.errors.length > 0) {
-                console.error('Erros de importação:', result.errors);
-            }
         }
     } catch (error) {
-        console.error('Erro ao importar CSV:', error);
         Notifications.error('Erro ao importar CSV');
     }
 }
 
-/**
- * Adicionar disciplina manualmente
- */
 async function addDisciplineManually() {
     try {
-        const code = document.getElementById('disciplineCode').value.trim();
-        const name = document.getElementById('disciplineName').value.trim();
-        const professor = document.getElementById('disciplineProfessor').value.trim();
-        const period = parseInt(document.getElementById('disciplinePeriod').value);
-        const hours = parseInt(document.getElementById('disciplineHours').value);
-        const prerequisites = document
-            .getElementById('disciplinePrerequisites')
-            .value.trim()
-            .split(',')
-            .map((p) => p.trim())
-            .filter((p) => p);
-
-        if (!code || !name || !professor || !period || !hours) {
-            Notifications.error('Preencha todos os campos obrigatórios');
-            return;
-        }
-
-        await DisciplinesAPI.create({
-            code,
-            name,
-            professor,
-            period,
-            hours,
-            prerequisites,
-            schedules: [],
-        });
-
-        Notifications.success('Disciplina adicionada com sucesso!');
-
-        // Limpar formulário
-        document.getElementById('disciplineCode').value = '';
-        document.getElementById('disciplineName').value = '';
-        document.getElementById('disciplineProfessor').value = '';
-        document.getElementById('disciplinePeriod').value = '';
-        document.getElementById('disciplineHours').value = '';
-        document.getElementById('disciplinePrerequisites').value = '';
-
+        const data = {
+            code: document.getElementById('disciplineCode').value.trim(),
+            name: document.getElementById('disciplineName').value.trim(),
+            professor: document.getElementById('disciplineProfessor').value.trim(),
+            period: parseInt(document.getElementById('disciplinePeriod').value),
+            hours: parseInt(document.getElementById('disciplineHours').value),
+            prerequisites: document.getElementById('disciplinePrerequisites').value.split(',').map(p => p.trim()).filter(p => p),
+            schedules: []
+        };
+        await DisciplinesAPI.create(data);
+        Notifications.success('Disciplina adicionada!');
         loadAdmin();
     } catch (error) {
-        console.error('Erro ao adicionar disciplina:', error);
         Notifications.error('Erro ao adicionar disciplina');
     }
 }
 
 /**
- * Abrir modal
+ * Funções auxiliares de Modal
  */
 function openModal(modalId) {
     const modal = document.getElementById(modalId);
-    if (modal) {
-        modal.classList.add('active');
-    }
+    if (modal) modal.classList.add('active');
 }
 
-/**
- * Fechar modal
- */
 function closeModal(modalId) {
     const modal = document.getElementById(modalId);
-    if (modal) {
-        modal.classList.remove('active');
-    }
+    if (modal) modal.classList.remove('active');
 }
 
 /**

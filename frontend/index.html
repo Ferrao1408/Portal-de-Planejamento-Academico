@@ -8,10 +8,8 @@
 </head>
 <body>
     <div id="app">
-        <!-- Notificações -->
         <div id="notifications" style="position: fixed; top: 20px; right: 20px; z-index: 200; max-width: 400px;"></div>
 
-        <!-- Header -->
         <header>
             <div class="container">
                 <div class="header-content">
@@ -20,14 +18,18 @@
                         <p>Ciência da Computação - UFRPE</p>
                     </div>
                     <div class="header-right">
-                        <p>Semestre Ativo</p>
-                        <p id="activeSemester">2024.1</p>
+                        <label for="semesterSelect" class="text-small" style="display: block; opacity: 0.8;">Semestre:</label>
+                        <select id="semesterSelect" style="padding: 4px 8px; border-radius: 4px; border: none; font-weight: bold; color: var(--primary-blue);">
+                            <option value="2024.1">2024.1</option>
+                            <option value="2024.2">2024.2</option>
+                            <option value="2025.1">2025.1</option>
+                            <option value="2025.2">2025.2</option>
+                        </select>
                     </div>
                 </div>
             </div>
         </header>
 
-        <!-- Navegação -->
         <nav>
             <div class="container">
                 <div class="nav-tabs">
@@ -40,10 +42,8 @@
             </div>
         </nav>
 
-        <!-- Conteúdo Principal -->
         <main>
             <div class="container">
-                <!-- Dashboard -->
                 <div id="dashboard" class="tab-content active">
                     <div class="grid grid-cols-1 grid-cols-3 gap-lg mb-2xl">
                         <div class="card">
@@ -61,11 +61,11 @@
                             <p class="text-small text-muted">neste semestre</p>
                         </div>
                         <div class="card">
-                            <h3>Média Geral</h3>
+                            <h3>Média Geral (CR)</h3>
                             <p style="font-size: 2rem; font-weight: bold; color: var(--primary-purple); margin: 0;">
                                 <span id="generalAverage">-</span>
                             </p>
-                            <p class="text-small text-muted">disciplinas concluídas</p>
+                            <p class="text-small text-muted">ponderada por carga horária</p>
                         </div>
                     </div>
 
@@ -75,13 +75,11 @@
                         </div>
                         <div class="card-body">
                             <div class="grid grid-cols-1 grid-cols-2 grid-cols-3 gap-md" id="dashboardDisciplines">
-                                <!-- Populated by JavaScript -->
-                            </div>
+                                </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Agenda Semanal -->
                 <div id="schedule" class="tab-content">
                     <div class="card">
                         <div class="card-header">
@@ -89,13 +87,11 @@
                         </div>
                         <div class="card-body table-responsive">
                             <div class="schedule-grid" id="scheduleGrid">
-                                <!-- Populated by JavaScript -->
-                            </div>
+                                </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Fluxograma -->
                 <div id="flowchart" class="tab-content">
                     <div class="card">
                         <div class="card-header">
@@ -117,28 +113,23 @@
                         </div>
                         <div class="card-body">
                             <div class="flowchart-container" id="flowchartContainer">
-                                <!-- Populated by JavaScript -->
-                            </div>
+                                </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Notas -->
                 <div id="grades" class="tab-content">
                     <div class="card">
                         <div class="card-header">
                             <h2>Painel de Notas</h2>
                         </div>
                         <div class="card-body" id="gradesPanel">
-                            <!-- Populated by JavaScript -->
-                        </div>
+                            </div>
                     </div>
                 </div>
 
-                <!-- Administração -->
                 <div id="admin" class="tab-content">
                     <div class="grid grid-cols-1 grid-cols-2 gap-lg mb-2xl">
-                        <!-- Importar CSV -->
                         <div class="card">
                             <div class="card-header">
                                 <h3>Importar CSV</h3>
@@ -155,7 +146,6 @@
                             </div>
                         </div>
 
-                        <!-- Adicionar Disciplina -->
                         <div class="card">
                             <div class="card-header">
                                 <h3>Adicionar Disciplina</h3>
@@ -192,7 +182,6 @@
                         </div>
                     </div>
 
-                    <!-- Catálogo de Disciplinas -->
                     <div class="card">
                         <div class="card-header">
                             <h2>Catálogo de Disciplinas</h2>
@@ -210,8 +199,7 @@
                                     </tr>
                                 </thead>
                                 <tbody id="catalogTable">
-                                    <!-- Populated by JavaScript -->
-                                </tbody>
+                                    </tbody>
                             </table>
                         </div>
                     </div>
@@ -220,8 +208,6 @@
         </main>
     </div>
 
-    <!-- Modais -->
-    <!-- Modal de Notas -->
     <div id="gradesModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -241,11 +227,9 @@
                 <input type="number" id="gradeN3" min="0" max="10" step="0.1">
             </div>
             <div id="gradesResult" class="alert alert-success hidden">
-                <!-- Populated by JavaScript -->
-            </div>
+                </div>
             <div id="finalExamAlert" class="alert alert-warning hidden">
-                <!-- Populated by JavaScript -->
-            </div>
+                </div>
             <div class="btn-group">
                 <button class="btn btn-primary flex-1" onclick="saveGrades()">Salvar Notas</button>
                 <button class="btn btn-secondary flex-1" onclick="closeModal('gradesModal')">Fechar</button>
@@ -253,7 +237,6 @@
         </div>
     </div>
 
-    <!-- Modal de Editar Disciplina -->
     <div id="editDisciplineModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -289,7 +272,6 @@
         </div>
     </div>
 
-    <!-- Scripts -->
     <script src="src/js/api.js"></script>
     <script src="src/js/ui.js"></script>
 </body>

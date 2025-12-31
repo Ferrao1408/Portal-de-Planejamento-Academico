@@ -15,17 +15,6 @@ class AcademicCalculations:
         """
         Calcula a média final conforme regra UFRPE.
         A média é a média das duas maiores notas entre N1, N2 e N3.
-
-        Args:
-            n1: Primeira nota (0-10)
-            n2: Segunda nota (0-10)
-            n3: Terceira nota (0-10)
-
-        Returns:
-            float: Média final (0-10)
-
-        Raises:
-            ValueError: Se alguma nota estiver fora do intervalo 0-10
         """
         notes = [n1, n2, n3]
         
@@ -41,50 +30,45 @@ class AcademicCalculations:
         return round(average, 2)
 
     @staticmethod
+    def calculate_weighted_cr(disciplines_list: List[dict]) -> Optional[float]:
+        """
+        Calcula o CR ponderado pela carga horária.
+        Fórmula: Σ(Nota * CH) / Σ(CH total)
+        """
+        total_weighted_points = 0
+        total_hours = 0
+        
+        for disc in disciplines_list:
+            media = disc.get('media_final')
+            ch = disc.get('hours', 60) # Padrão 60h se não informado
+            
+            if media is not None:
+                total_weighted_points += (media * ch)
+                total_hours += ch
+                
+        if total_hours == 0:
+            return None
+            
+        return round(total_weighted_points / total_hours, 2)
+
+    @staticmethod
     def calculate_final_exam_grade(average: float) -> Optional[float]:
         """
         Calcula a nota necessária na prova final.
         Aplicável quando: média >= 3.0 e < 7.0
-
-        Args:
-            average: Média das duas maiores notas
-
-        Returns:
-            float: Nota necessária na final (0-10), ou None se não precisar fazer final
-
-        Raises:
-            ValueError: Se a média estiver fora do intervalo 0-10
         """
         if not (0 <= average <= 10):
             raise ValueError(f"Média {average} fora do intervalo 0-10")
         
-        # Se média >= 7.0, já passou
-        if average >= 7.0:
+        if average >= 7.0 or average < 3.0:
             return None
         
-        # Se média < 3.0, reprova direto
-        if average < 3.0:
-            return None
-        
-        # Se 3.0 <= média < 7.0, precisa fazer final
         final_grade_needed = 10 - average
         return round(final_grade_needed, 2)
 
     @staticmethod
     def calculate_course_progress(completed_hours: int, total_hours: int = 3210) -> float:
-        """
-        Calcula o percentual de progresso do curso.
-
-        Args:
-            completed_hours: Horas de disciplinas concluídas (média >= 7.0)
-            total_hours: Total de horas do curso (padrão: 3210 para CCP02)
-
-        Returns:
-            float: Percentual de conclusão (0-100)
-
-        Raises:
-            ValueError: Se os valores forem inválidos
-        """
+        """Calcula o percentual de progresso do curso (Padrão: 3210h para CCP02)."""
         if total_hours <= 0:
             raise ValueError("Total de horas deve ser maior que 0")
         
@@ -99,18 +83,7 @@ class AcademicCalculations:
 
     @staticmethod
     def calculate_general_average(discipline_averages: List[float]) -> Optional[float]:
-        """
-        Calcula a média geral do aluno.
-
-        Args:
-            discipline_averages: Lista de médias das disciplinas concluídas
-
-        Returns:
-            float: Média geral, ou None se não houver disciplinas concluídas
-
-        Raises:
-            ValueError: Se alguma média estiver fora do intervalo 0-10
-        """
+        """Calcula a média aritmética simples das disciplinas."""
         if not discipline_averages:
             return None
         
@@ -127,18 +100,7 @@ class ScheduleValidation:
 
     @staticmethod
     def time_to_minutes(time_str: str) -> int:
-        """
-        Converte uma string de horário (HH:MM) para minutos.
-
-        Args:
-            time_str: Horário em formato HH:MM
-
-        Returns:
-            int: Número de minutos desde meia-noite
-
-        Raises:
-            ValueError: Se o formato for inválido
-        """
+        """Converte string (HH:MM) para minutos."""
         try:
             hours, minutes = map(int, time_str.split(':'))
             if not (0 <= hours < 24 and 0 <= minutes < 60):
@@ -149,18 +111,7 @@ class ScheduleValidation:
 
     @staticmethod
     def check_time_overlap(start1: str, end1: str, start2: str, end2: str) -> bool:
-        """
-        Verifica se dois períodos de tempo se sobrepõem.
-
-        Args:
-            start1: Horário de início do período 1 (HH:MM)
-            end1: Horário de término do período 1 (HH:MM)
-            start2: Horário de início do período 2 (HH:MM)
-            end2: Horário de término do período 2 (HH:MM)
-
-        Returns:
-            bool: True se houver sobreposição, False caso contrário
-        """
+        """Verifica se dois períodos de tempo se sobrepõem."""
         start1_min = ScheduleValidation.time_to_minutes(start1)
         end1_min = ScheduleValidation.time_to_minutes(end1)
         start2_min = ScheduleValidation.time_to_minutes(start2)
@@ -171,33 +122,19 @@ class ScheduleValidation:
     @staticmethod
     def has_schedule_conflict(discipline1_schedules: List[Dict], 
                              discipline2_schedules: List[Dict]) -> Tuple[bool, Optional[Dict]]:
-        """
-        Verifica se há conflito de horários entre duas disciplinas.
-
-        Args:
-            discipline1_schedules: Lista de horários da disciplina 1
-            discipline2_schedules: Lista de horários da disciplina 2
-
-        Returns:
-            Tuple[bool, Optional[Dict]]: (tem_conflito, info_conflito)
-        """
+        """Verifica se há conflito de horários entre duas disciplinas."""
         for sch1 in discipline1_schedules:
             for sch2 in discipline2_schedules:
-                # Mesmo dia da semana
                 if sch1.get('day') == sch2.get('day'):
-                    # Verificar sobreposição de horários
                     if ScheduleValidation.check_time_overlap(
-                        sch1.get('start'),
-                        sch1.get('end'),
-                        sch2.get('start'),
-                        sch2.get('end')
+                        sch1.get('start'), sch1.get('end'),
+                        sch2.get('start'), sch2.get('end')
                     ):
                         return True, {
                             'day': sch1.get('day'),
                             'time1': f"{sch1.get('start')}-{sch1.get('end')}",
                             'time2': f"{sch2.get('start')}-{sch2.get('end')}"
                         }
-        
         return False, None
 
 
@@ -207,48 +144,23 @@ class PrerequisiteValidation:
     @staticmethod
     def check_prerequisites(discipline_prerequisites: List[str],
                            completed_disciplines: Dict[str, float]) -> Tuple[bool, List[str]]:
-        """
-        Verifica se todos os pré-requisitos foram atendidos.
-
-        Args:
-            discipline_prerequisites: Lista de IDs de pré-requisitos
-            completed_disciplines: Dicionário {discipline_id: media_final}
-
-        Returns:
-            Tuple[bool, List[str]]: (todos_atendidos, pré_requisitos_faltantes)
-        """
+        """Verifica se todos os pré-requisitos foram atendidos com média >= 7.0."""
         missing = []
-        
         for prereq_id in discipline_prerequisites:
-            # Verificar se o pré-requisito foi concluído (média >= 7.0)
             if prereq_id not in completed_disciplines or completed_disciplines[prereq_id] < 7.0:
                 missing.append(prereq_id)
-        
         return len(missing) == 0, missing
 
     @staticmethod
     def validate_discipline_status(discipline_prerequisites: List[str],
                                   completed_disciplines: Dict[str, float]) -> str:
-        """
-        Determina o status de uma disciplina.
-
-        Args:
-            discipline_prerequisites: Lista de IDs de pré-requisitos
-            completed_disciplines: Dicionário {discipline_id: media_final}
-
-        Returns:
-            str: Status ('completed', 'available', 'blocked')
-        """
-        # Se não há pré-requisitos, está disponível
+        """Determina o status da disciplina ('completed', 'available', 'blocked')."""
         if not discipline_prerequisites:
             return 'available'
         
-        # Verificar se todos os pré-requisitos foram atendidos
         all_met, _ = PrerequisiteValidation.check_prerequisites(
-            discipline_prerequisites,
-            completed_disciplines
+            discipline_prerequisites, completed_disciplines
         )
-        
         return 'available' if all_met else 'blocked'
 
 
@@ -256,49 +168,13 @@ class DataValidation:
     """Classe responsável pela validação geral de dados."""
 
     @staticmethod
-    def validate_discipline_code(code: str) -> bool:
-        """Valida o código de uma disciplina."""
-        return bool(code and isinstance(code, str) and len(code.strip()) > 0)
-
-    @staticmethod
-    def validate_period(period: int) -> bool:
-        """Valida o período (nível) de uma disciplina."""
-        return isinstance(period, int) and 1 <= period <= 9
-
-    @staticmethod
-    def validate_hours(hours: int) -> bool:
-        """Valida a carga horária de uma disciplina."""
-        return isinstance(hours, int) and hours > 0
-
-    @staticmethod
-    def validate_day_of_week(day: int) -> bool:
-        """Valida o dia da semana (1=Segunda, 5=Sexta)."""
-        return isinstance(day, int) and 1 <= day <= 5
-
-    @staticmethod
     def validate_discipline_data(code: str, name: str, professor: str, 
                                 period: int, hours: int) -> Tuple[bool, List[str]]:
-        """
-        Valida todos os dados de uma disciplina.
-
-        Returns:
-            Tuple[bool, List[str]]: (válido, lista_de_erros)
-        """
         errors = []
-        
-        if not DataValidation.validate_discipline_code(code):
+        if not code or len(code.strip()) == 0:
             errors.append("Código de disciplina inválido")
-        
-        if not name or not isinstance(name, str):
-            errors.append("Nome da disciplina inválido")
-        
-        if not professor or not isinstance(professor, str):
-            errors.append("Nome do professor inválido")
-        
-        if not DataValidation.validate_period(period):
+        if not (1 <= period <= 9):
             errors.append("Período deve estar entre 1 e 9")
-        
-        if not DataValidation.validate_hours(hours):
+        if hours <= 0:
             errors.append("Carga horária deve ser maior que 0")
-        
         return len(errors) == 0, errors
